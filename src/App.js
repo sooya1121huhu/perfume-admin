@@ -237,69 +237,6 @@ function AdminLayout() {
     }
   };
 
-  const columns = [
-    {
-      title: '이름',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '브랜드',
-      dataIndex: 'brand',
-      key: 'brand',
-    },
-    {
-      title: '주요 노트',
-      dataIndex: 'notes',
-      key: 'notes',
-      render: (notes) => Array.isArray(notes) ? notes.join(', ') : notes,
-      ellipsis: true,
-    },
-    {
-      title: '어울리는 계절',
-      dataIndex: 'season_tags',
-      key: 'season_tags',
-      render: (season_tags) => Array.isArray(season_tags) ? season_tags.join(', ') : season_tags,
-    },
-    {
-      title: '어울리는 날씨',
-      dataIndex: 'weather_tags',
-      key: 'weather_tags',
-      render: (weather_tags) => Array.isArray(weather_tags) ? weather_tags.join(', ') : weather_tags,
-    },
-    {
-      title: '분석 이유',
-      dataIndex: 'analysis_reason',
-      key: 'analysis_reason',
-      ellipsis: true,
-    },
-    {
-      title: '작업',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => handleEdit(record)}
-          >
-            수정
-          </Button>
-          <Button
-            type={record.status === 1 ? 'default' : 'primary'}
-            danger={record.status === 1}
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => handleToggleStatus(record)}
-          >
-            {record.status === 1 ? '감추기' : '노출하기'}
-          </Button>
-        </Space>
-      ),
-    },
-  ];
-
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider width={200} theme="dark">
