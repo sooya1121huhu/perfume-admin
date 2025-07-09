@@ -18,8 +18,6 @@ import {
 } from 'antd';
 import {
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
   DashboardOutlined,
   ShoppingOutlined,
   UserOutlined
