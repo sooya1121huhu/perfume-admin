@@ -61,6 +61,7 @@ function AdminLayout() {
   const [pwModalVisible, setPwModalVisible] = useState(false);
   const [pwUser, setPwUser] = useState(null);
   const [pwForm] = Form.useForm();
+  const [brands, setBrands] = useState([]);
 
   // 탭-URL 매핑
   const tabKeyToPath = {
@@ -78,7 +79,8 @@ function AdminLayout() {
 
   useEffect(() => {
     if (currentTab === 'perfumes') {
-    fetchPerfumes();
+      fetchPerfumes();
+      fetchBrands();
     } else if (currentTab === 'dashboard') {
       fetchPerfumeSummary();
     } else if (currentTab === 'users') {
@@ -86,6 +88,20 @@ function AdminLayout() {
     }
     // eslint-disable-next-line
   }, [currentTab]);
+
+  // 브랜드 목록 가져오기
+  const fetchBrands = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/brands`);
+      if (!response.ok) {
+        throw new Error('브랜드 데이터를 불러오는데 실패했습니다.');
+      }
+      const result = await response.json();
+      setBrands(result.data || []);
+    } catch (err) {
+      message.error(err.message);
+    }
+  };
 
   const fetchPerfumes = async () => {
     try {
@@ -141,7 +157,14 @@ function AdminLayout() {
 
   const handleEdit = (record) => {
     setEditingPerfume(record);
-    form.setFieldsValue(record);
+    form.setFieldsValue({
+      brand_id: record.brand_id,
+      name: record.name,
+      notes: record.notes,
+      season_tags: record.season_tags,
+      weather_tags: record.weather_tags,
+      analysis_reason: record.analysis_reason
+    });
     setModalVisible(true);
   };
 
@@ -252,17 +275,13 @@ function AdminLayout() {
         </Menu>
       </Sider>
       <Layout>
-        <Header style={{ background: '#fff', padding: '0 24px' }}>
-          <Title level={3} style={{ margin: 0, lineHeight: '64px' }}>
-            🎭 향수 관리 시스템
-          </Title>
-        </Header>
+        <Header style={{ background: '#fff', padding: 0 }} />
         <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
           <Routes>
             <Route path="/dashboard" element={<DashboardTab perfumeSummary={perfumeSummary} summaryLoading={summaryLoading} />} />
-            <Route path="/perfumes" element={<PerfumeTab perfumes={perfumes} loading={loading} modalVisible={modalVisible} setModalVisible={setModalVisible} editingPerfume={editingPerfume} setEditingPerfume={setEditingPerfume} form={form} fetchPerfumes={fetchPerfumes} handleAdd={handleAdd} handleEdit={handleEdit} handleToggleStatus={handleToggleStatus} handleSubmit={handleSubmit} />} />
+            <Route path="/perfumes" element={<PerfumeTab perfumes={perfumes} loading={loading} modalVisible={modalVisible} setModalVisible={setModalVisible} editingPerfume={editingPerfume} setEditingPerfume={setEditingPerfume} form={form} fetchPerfumes={fetchPerfumes} handleAdd={handleAdd} handleEdit={handleEdit} handleToggleStatus={handleToggleStatus} handleSubmit={handleSubmit} brands={brands} />} />
             <Route path="/users" element={<UserTab users={users} userLoading={userLoading} openPwModal={openPwModal} handleUserDelete={handleUserDelete} pwModalVisible={pwModalVisible} setPwModalVisible={setPwModalVisible} pwUser={pwUser} pwForm={pwForm} handlePwReset={handlePwReset} />} />
-            <Route path="*" element={<DashboardTab perfumeSummary={perfumeSummary} summaryLoading={summaryLoading} />} />
+            <Route path="/" element={<DashboardTab perfumeSummary={perfumeSummary} summaryLoading={summaryLoading} />} />
           </Routes>
         </Content>
       </Layout>
@@ -273,27 +292,28 @@ function AdminLayout() {
 function DashboardTab({ perfumeSummary, summaryLoading }) {
   return (
     <>
-      <Title level={4}>고객 보유 향수 현황</Title>
+      <Title level={2}>대시보드</Title>
       <Table
         columns={[
           { title: '향수명', dataIndex: 'perfume_name', key: 'perfume_name' },
-          { title: '보유 중인 유저 수', dataIndex: 'user_count', key: 'user_count' }
+          { title: '브랜드', dataIndex: 'brand_name', key: 'brand_name' },
+          { title: '보유 유저 수', dataIndex: 'user_count', key: 'user_count' }
         ]}
         dataSource={perfumeSummary}
         rowKey="perfume_id"
         loading={summaryLoading}
-        pagination={false}
+        pagination={{ pageSize: 10 }}
       />
     </>
   );
 }
 
-function PerfumeTab({ perfumes, loading, modalVisible, setModalVisible, editingPerfume, setEditingPerfume, form, fetchPerfumes, handleAdd, handleEdit, handleToggleStatus, handleSubmit }) {
+function PerfumeTab({ perfumes, loading, modalVisible, setModalVisible, editingPerfume, setEditingPerfume, form, fetchPerfumes, handleAdd, handleEdit, handleToggleStatus, handleSubmit, brands }) {
   // 테이블 컬럼 정의 추가
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: '이름', dataIndex: 'name', key: 'name' },
-    { title: '브랜드', dataIndex: 'brand', key: 'brand' },
+    { title: '브랜드', dataIndex: 'PerfumeBrand', key: 'brand', render: brand => brand?.name || '브랜드 없음' },
     { title: '주요 노트', dataIndex: 'notes', key: 'notes', render: notes => notes?.join(', ') },
     { title: '계절', dataIndex: 'season_tags', key: 'season_tags', render: tags => tags?.join(', ') },
     { title: '날씨', dataIndex: 'weather_tags', key: 'weather_tags', render: tags => tags?.join(', ') },
@@ -327,7 +347,7 @@ function PerfumeTab({ perfumes, loading, modalVisible, setModalVisible, editingP
               <Card>
                 <Statistic
                   title="총 브랜드 수"
-                  value={perfumes.length > 0 ? new Set(perfumes.map(p => p.brand)).size : 0}
+                  value={brands.length}
                   suffix="개"
                 />
               </Card>
@@ -370,19 +390,17 @@ function PerfumeTab({ perfumes, loading, modalVisible, setModalVisible, editingP
           </Form.Item>
           
           <Form.Item
-            name="url"
-            label="상세 정보 URL"
-            rules={[]}
-          >
-            <Input placeholder="https://www.fragrantica.fr/..." />
-          </Form.Item>
-          
-          <Form.Item
-            name="brand"
+            name="brand_id"
             label="브랜드"
-            rules={[{ required: true, message: '브랜드를 입력해주세요!' }]}
+            rules={[{ required: true, message: '브랜드를 선택해주세요!' }]}
           >
-            <Input />
+            <Select placeholder="브랜드 선택">
+              {brands.map(brand => (
+                <Option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
           
           <Form.Item
